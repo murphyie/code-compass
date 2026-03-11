@@ -14,7 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analyses: {
+        Row: {
+          created_at: string
+          elements: Json | null
+          id: string
+          issues: Json | null
+          languages: Json | null
+          project_id: string
+          score: number | null
+          summary: string | null
+          total_files: number | null
+          total_lines: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          elements?: Json | null
+          id?: string
+          issues?: Json | null
+          languages?: Json | null
+          project_id: string
+          score?: number | null
+          summary?: string | null
+          total_files?: number | null
+          total_lines?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          elements?: Json | null
+          id?: string
+          issues?: Json | null
+          languages?: Json | null
+          project_id?: string
+          score?: number | null
+          summary?: string | null
+          total_files?: number | null
+          total_lines?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analyses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          project_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          project_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          file_tree: Json | null
+          files_content: Json | null
+          github_url: string | null
+          id: string
+          name: string
+          source_type: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_tree?: Json | null
+          files_content?: Json | null
+          github_url?: string | null
+          id?: string
+          name: string
+          source_type: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_tree?: Json | null
+          files_content?: Json | null
+          github_url?: string | null
+          id?: string
+          name?: string
+          source_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
