@@ -1,7 +1,5 @@
-import { FileNode } from "@/data/mockData";
-
 interface CodeViewerProps {
-  file: FileNode | null;
+  file: { name: string; content?: string; language?: string; path?: string } | null;
 }
 
 const CodeViewer = ({ file }: CodeViewerProps) => {
@@ -18,7 +16,7 @@ const CodeViewer = ({ file }: CodeViewerProps) => {
   return (
     <div className="h-full overflow-auto scrollbar-thin">
       <div className="flex border-b border-border/50 bg-secondary/30 px-4 py-2">
-        <span className="text-xs font-mono text-muted-foreground">{file.name}</span>
+        <span className="text-xs font-mono text-muted-foreground">{file.path || file.name}</span>
         {file.language && (
           <span className="ml-auto text-[10px] uppercase tracking-wider text-primary/60">{file.language}</span>
         )}
