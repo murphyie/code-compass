@@ -1,46 +1,73 @@
-import { useState } from "react";
-import { Send, Bot, User } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Send, Bot, User, Loader2 } from "lucide-react";
+import { streamChat, ChatMessage } from "@/lib/aiService";
+import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
-interface Message {
-  role: "user" | "assistant";
-  content: string;
+interface ChatPanelProps {
+  projectId: string | null;
+  filesContent: Record<string, string> | null;
 }
 
-const mockResponses: Record<string, string> = {
-  default: "I can help you understand this codebase! Try asking about specific functions, variables, or the overall architecture.",
-  auth: "The authentication system uses JWT tokens. The `authenticate()` function in `auth/handler.ts` verifies tokens and looks up users in the database. The `authMiddleware` in `middleware.ts` protects routes by extracting the Bearer token from the Authorization header.",
-  function: "I found **8 functions** across the codebase:\n\n- `authenticate()` — JWT verification (handler.ts)\n- `generateToken()` — Token creation (handler.ts)\n- `authMiddleware()` — Route protection (middleware.ts)\n- `getUsers()` — Fetch all users (controllers.ts)\n- `createUser()` — Create user (controllers.ts)\n- `deleteUser()` — Delete user (controllers.ts)\n- `formatDate()` — Date formatting (helpers.ts)\n- `slugify()` — String slugification (helpers.ts)",
-  security: "⚠️ **Security Issues Found:**\n\n1. No token expiry validation in `authenticate()`\n2. `JWT_SECRET` not validated on startup — could be undefined\n3. Potential SQL injection in `database.ts` — consider using parameterized queries\n4. No input validation in `createUser` controller",
-  unused: "🗑️ **Dead Code Detected:**\n\n- `deprecatedHelper()` in `utils/helpers.ts` (line 12) — This function is never imported or called anywhere in the codebase. Safe to remove.",
-};
-
-function getResponse(input: string): string {
-  const lower = input.toLowerCase();
-  if (lower.includes("auth") || lower.includes("login") || lower.includes("token")) return mockResponses.auth;
-  if (lower.includes("function") || lower.includes("method")) return mockResponses.function;
-  if (lower.includes("security") || lower.includes("bug") || lower.includes("vulnerab")) return mockResponses.security;
-  if (lower.includes("unused") || lower.includes("dead") || lower.includes("deprecated")) return mockResponses.unused;
-  return mockResponses.default;
-}
-
-const ChatPanel = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "👋 I've analyzed your codebase. Ask me anything! Try: \"Explain the auth system\" or \"Find security issues\"" },
+const ChatPanel = ({ projectId, filesContent }: ChatPanelProps) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: "assistant", content: "👋 I have context of your codebase. Ask me anything! Try:\n- \"Explain the authentication system\"\n- \"Find all API calls\"\n- \"Where are security vulnerabilities?\"\n- \"Suggest refactoring improvements\"" },
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const send = () => {
-    if (!input.trim()) return;
-    const userMsg: Message = { role: "user", content: input };
-    const aiMsg: Message = { role: "assistant", content: getResponse(input) };
-    setMessages((prev) => [...prev, userMsg, aiMsg]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const send = async () => {
+    if (!input.trim() || isLoading) return;
+    if (!projectId) {
+      toast.error("Please upload code first");
+      return;
+    }
+
+    const userMsg: ChatMessage = { role: "user", content: input };
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setIsLoading(true);
+
+    let assistantSoFar = "";
+
+    const upsertAssistant = (chunk: string) => {
+      assistantSoFar += chunk;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && prev.length > 1 && prev[prev.length - 2]?.content === userMsg.content) {
+          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
+        }
+        return [...prev, { role: "assistant", content: assistantSoFar }];
+      });
+    };
+
+    try {
+      await streamChat({
+        messages: [...messages, userMsg],
+        projectId,
+        filesContent: filesContent || undefined,
+        onDelta: upsertAssistant,
+        onDone: () => setIsLoading(false),
+        onError: (error) => {
+          toast.error(error);
+          setIsLoading(false);
+        },
+      });
+    } catch (e) {
+      toast.error("Failed to get AI response");
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border/50 bg-secondary/30 px-4 py-2.5">
-        <h3 className="text-xs font-semibold text-primary flex items-center gap-1.5">
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-primary">
           <Bot className="h-3.5 w-3.5" /> AI Chat
         </h3>
       </div>
@@ -53,11 +80,17 @@ const ChatPanel = () => {
               </div>
             )}
             <div className={`max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
-              msg.role === "user" 
-                ? "bg-primary text-primary-foreground" 
+              msg.role === "user"
+                ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-secondary-foreground"
             }`}>
-              <pre className="whitespace-pre-wrap font-sans">{msg.content}</pre>
+              {msg.role === "assistant" ? (
+                <div className="prose prose-invert prose-xs max-w-none [&_p]:m-0 [&_ul]:my-1 [&_li]:my-0 [&_code]:text-primary [&_code]:bg-primary/10 [&_code]:px-1 [&_code]:rounded">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <span>{msg.content}</span>
+              )}
             </div>
             {msg.role === "user" && (
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent/20">
@@ -66,17 +99,29 @@ const ChatPanel = () => {
             )}
           </div>
         ))}
+        {isLoading && messages[messages.length - 1]?.role === "user" && (
+          <div className="flex gap-2">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            </div>
+            <div className="rounded-lg bg-secondary px-3 py-2 text-xs text-muted-foreground">
+              Thinking...
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
       </div>
       <div className="border-t border-border/50 p-3">
         <div className="flex items-center gap-2 rounded-lg bg-secondary/50 px-3 py-2">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Ask about the codebase..."
-            className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+            placeholder={projectId ? "Ask about the codebase..." : "Upload code first..."}
+            disabled={!projectId || isLoading}
+            className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50"
           />
-          <button onClick={send} className="text-primary hover:text-primary/80">
+          <button onClick={send} disabled={!projectId || isLoading} className="text-primary hover:text-primary/80 disabled:opacity-50">
             <Send className="h-4 w-4" />
           </button>
         </div>
