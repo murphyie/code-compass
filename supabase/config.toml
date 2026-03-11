@@ -1,0 +1,10 @@
+project_id = "hkstkuoixiogebynzatz"
+
+[functions.analyze-code]
+verify_jwt = false
+
+[functions.chat]
+verify_jwt = false
+
+[functions.fetch-github]
+verify_jwt = false

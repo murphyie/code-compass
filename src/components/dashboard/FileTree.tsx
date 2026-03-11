@@ -1,19 +1,27 @@
 import { useState } from "react";
-import { FileNode } from "@/data/mockData";
 import { ChevronRight, ChevronDown, FileCode, Folder, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface FileNode {
+  name: string;
+  type: "file" | "folder";
+  path?: string;
+  language?: string;
+  content?: string;
+  children?: FileNode[];
+}
 
 interface FileTreeProps {
   node: FileNode;
   depth?: number;
-  selectedFile?: string;
+  selectedPath?: string;
   onSelectFile: (node: FileNode) => void;
 }
 
-const FileTreeItem = ({ node, depth = 0, selectedFile, onSelectFile }: FileTreeProps) => {
+const FileTreeItem = ({ node, depth = 0, selectedPath, onSelectFile }: FileTreeProps) => {
   const [open, setOpen] = useState(depth < 2);
   const isFolder = node.type === "folder";
-  const isSelected = !isFolder && node.name === selectedFile;
+  const isSelected = !isFolder && node.path === selectedPath;
 
   return (
     <div>
@@ -42,21 +50,22 @@ const FileTreeItem = ({ node, depth = 0, selectedFile, onSelectFile }: FileTreeP
         )}
         <span className="truncate font-mono">{node.name}</span>
       </button>
-      {isFolder && open && node.children?.map((child) => (
-        <FileTreeItem key={child.name} node={child} depth={depth + 1} selectedFile={selectedFile} onSelectFile={onSelectFile} />
+      {isFolder && open && node.children?.map((child, i) => (
+        <FileTreeItem key={child.name + i} node={child} depth={depth + 1} selectedPath={selectedPath} onSelectFile={onSelectFile} />
       ))}
     </div>
   );
 };
 
-const FileTree = ({ node, selectedFile, onSelectFile }: FileTreeProps) => {
+const FileTree = ({ node, selectedPath, onSelectFile }: { node: FileNode; selectedPath?: string; onSelectFile: (node: FileNode) => void }) => {
   return (
     <div className="scrollbar-thin overflow-y-auto p-2">
-      {node.children?.map((child) => (
-        <FileTreeItem key={child.name} node={child} depth={0} selectedFile={selectedFile} onSelectFile={onSelectFile} />
+      {node.children?.map((child, i) => (
+        <FileTreeItem key={child.name + i} node={child} depth={0} selectedPath={selectedPath} onSelectFile={onSelectFile} />
       ))}
     </div>
   );
 };
 
 export default FileTree;
+export type { FileNode };

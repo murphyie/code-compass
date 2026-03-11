@@ -30,7 +30,7 @@ const Navbar = () => {
             <Link to="/dashboard">Log In</Link>
           </Button>
           <Button variant="hero" size="sm" asChild>
-            <Link to="/dashboard">Get Started</Link>
+            <Link to="/auth">Get Started</Link>
           </Button>
         </div>
 
