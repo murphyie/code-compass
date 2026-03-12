@@ -197,3 +197,4 @@ const AIPanel = ({ analysis, loading }: AIPanelProps) => {
 };
 
 export default AIPanel;
+
