@@ -75,11 +75,11 @@ const AIPanel = ({ analysis, loading }: AIPanelProps) => {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex flex-col overflow-hidden">
       <div className="border-b border-border/50 bg-secondary/30 px-4 py-2.5">
         <h3 className="text-xs font-semibold text-primary">AI Analysis</h3>
       </div>
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-5">
+      <div className="p-4 space-y-5">
         {/* Score */}
         {analysis.score != null && (
           <div className="text-center animate-fade-in">
