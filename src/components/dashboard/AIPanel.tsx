@@ -1,4 +1,6 @@
 import { AlertTriangle, AlertCircle, Info, TrendingUp, FileCode, Layers, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface AnalysisData {
   summary?: string;
@@ -21,13 +23,42 @@ const severityConfig = {
   info: { icon: Info, className: "text-info bg-info/10 border-info/20" },
 };
 
+const AnalysisSkeleton = () => (
+  <div className="p-4 space-y-5 animate-fade-in">
+    <div className="flex justify-center">
+      <Skeleton className="h-20 w-20 rounded-full" />
+    </div>
+    <Skeleton className="h-16 w-full rounded-lg" />
+    <div className="grid grid-cols-2 gap-2">
+      <Skeleton className="h-20 rounded-lg" />
+      <Skeleton className="h-20 rounded-lg" />
+    </div>
+    <div className="space-y-2">
+      <Skeleton className="h-3 w-20" />
+      <Skeleton className="h-6 w-full rounded-lg" />
+      <Skeleton className="h-6 w-full rounded-lg" />
+      <Skeleton className="h-6 w-3/4 rounded-lg" />
+    </div>
+    <div className="space-y-2">
+      <Skeleton className="h-3 w-16" />
+      <Skeleton className="h-14 w-full rounded-lg" />
+      <Skeleton className="h-14 w-full rounded-lg" />
+    </div>
+  </div>
+);
+
 const AIPanel = ({ analysis, loading }: AIPanelProps) => {
   if (loading) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">AI is analyzing your code...</p>
-        <p className="text-xs text-muted-foreground/60">This may take a moment</p>
+      <div className="flex h-full flex-col overflow-hidden">
+        <div className="border-b border-border/50 bg-secondary/30 px-4 py-2.5">
+          <h3 className="flex items-center gap-2 text-xs font-semibold text-primary">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Analyzing...
+          </h3>
+        </div>
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
+          <AnalysisSkeleton />
+        </div>
       </div>
     );
   }
@@ -51,12 +82,13 @@ const AIPanel = ({ analysis, loading }: AIPanelProps) => {
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-5">
         {/* Score */}
         {analysis.score != null && (
-          <div className="text-center">
+          <div className="text-center animate-fade-in">
             <div className="relative mx-auto h-20 w-20">
               <svg className="h-20 w-20 -rotate-90" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r="32" fill="none" stroke="hsl(var(--border))" strokeWidth="6" />
                 <circle cx="40" cy="40" r="32" fill="none" stroke="hsl(var(--primary))" strokeWidth="6"
-                  strokeDasharray={`${(analysis.score / 100) * 201} 201`} strokeLinecap="round" />
+                  strokeDasharray={`${(analysis.score / 100) * 201} 201`} strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out" />
               </svg>
               <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-foreground">
                 {analysis.score}
@@ -68,14 +100,14 @@ const AIPanel = ({ analysis, loading }: AIPanelProps) => {
 
         {/* Summary */}
         {analysis.summary && (
-          <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
+          <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <h4 className="mb-1 text-xs font-semibold text-primary">Summary</h4>
             <p className="text-xs leading-relaxed text-muted-foreground">{analysis.summary}</p>
           </div>
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 animate-fade-in" style={{ animationDelay: "0.2s" }}>
           <div className="rounded-lg bg-secondary/50 p-3 text-center">
             <FileCode className="mx-auto h-4 w-4 text-primary mb-1" />
             <div className="text-lg font-bold text-foreground">{analysis.total_files || 0}</div>
@@ -90,7 +122,7 @@ const AIPanel = ({ analysis, loading }: AIPanelProps) => {
 
         {/* Languages */}
         {analysis.languages && analysis.languages.length > 0 && (
-          <div>
+          <div className="animate-fade-in" style={{ animationDelay: "0.3s" }}>
             <h4 className="mb-2 text-xs font-semibold text-foreground">Languages</h4>
             {analysis.languages.map((l) => (
               <div key={l.name} className="mb-2">
@@ -99,7 +131,10 @@ const AIPanel = ({ analysis, loading }: AIPanelProps) => {
                   <span>{l.percentage}%</span>
                 </div>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${l.percentage}%` }} />
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                    style={{ width: `${l.percentage}%` }}
+                  />
                 </div>
               </div>
             ))}
@@ -108,7 +143,7 @@ const AIPanel = ({ analysis, loading }: AIPanelProps) => {
 
         {/* Elements */}
         {analysis.elements && analysis.elements.length > 0 && (
-          <div>
+          <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
             <h4 className="mb-2 text-xs font-semibold text-foreground">
               Elements ({analysis.elements.length})
             </h4>
@@ -133,7 +168,7 @@ const AIPanel = ({ analysis, loading }: AIPanelProps) => {
 
         {/* Issues */}
         {analysis.issues && analysis.issues.length > 0 && (
-          <div>
+          <div className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
             <h4 className="mb-2 text-xs font-semibold text-foreground flex items-center gap-1.5">
               <TrendingUp className="h-3.5 w-3.5 text-primary" /> Issues ({analysis.issues.length})
             </h4>
@@ -142,7 +177,7 @@ const AIPanel = ({ analysis, loading }: AIPanelProps) => {
                 const config = severityConfig[issue.severity as keyof typeof severityConfig] || severityConfig.info;
                 const Icon = config.icon;
                 return (
-                  <div key={i} className={`rounded-md border p-2.5 text-xs ${config.className}`}>
+                  <div key={i} className={cn("rounded-md border p-2.5 text-xs", config.className)}>
                     <div className="flex items-start gap-2">
                       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                       <div>
